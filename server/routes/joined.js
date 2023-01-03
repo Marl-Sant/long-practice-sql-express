@@ -27,11 +27,19 @@ router.get('/trees-insects', async (req, res, next) => {
         include: {
             model: Insect,
             attributes: ["id", "name"],
-            through:{
+            where: {
+                name: {
+                    [Op.not]: null
+                }
+            },
+            through: {
                 attributes: []
             },
         },
-        // order: [[Insect, "name", "DESC"]]
+        order: [
+            ["id", "ASC"],
+            [Insect, 'name']
+        ]
     });
 
     res.json(trees);
@@ -55,14 +63,22 @@ router.get('/insects-trees', async (req, res, next) => {
 
     const insects = await Insect.findAll({
         attributes: ['id', 'name', 'description'],
-        order: [ ['name'] ],
+        order: [['name']]
     });
     for (let i = 0; i < insects.length; i++) {
         const insect = insects[i];
+        console.log(insect)
+        const insectTree = await insect.getTrees({order:[["tree", "ASC"]]})
+        const trees = []
+        for (let j = 0; j < insectTree.length; j++) {
+            let tree = insectTree[j]
+            trees.push({id: tree.id, tree: tree.tree})
+        }
         payload.push({
             id: insect.id,
             name: insect.name,
             description: insect.description,
+            trees: trees
         });
     }
 
